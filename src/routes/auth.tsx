@@ -1,0 +1,178 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/auth")({
+  ssr: false,
+  head: () => ({ meta: [{ title: "Sign in — Tally CRM" }] }),
+  component: AuthPage,
+});
+
+type View = "signin" | "forgot";
+
+function AuthPage() {
+  const navigate = useNavigate();
+  const [view, setView] = useState<View>("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) navigate({ to: "/app", replace: true });
+    });
+  }, [navigate]);
+
+  async function handleSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Signed in");
+      navigate({ to: "/app", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Authentication failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Password reset link sent. Check your email.");
+      setView("signin");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send reset link");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 shadow-[var(--shadow-md)]">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-black tracking-tight text-foreground">
+            Tally <span className="text-accent-dark">CRM</span>
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            {view === "signin" ? "Sign in to your workspace" : "Reset your password"}
+          </p>
+        </div>
+
+        {view === "signin" ? (
+          <form onSubmit={handleSignIn} className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-text-secondary">Email</label>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-text-secondary">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-16 text-sm focus:border-primary focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-2 my-auto h-7 rounded px-2 text-xs font-semibold text-text-secondary hover:text-foreground"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="h-4 w-4 rounded border-border"
+                />
+                Remember me
+              </label>
+              <button
+                type="button"
+                onClick={() => setView("forgot")}
+                className="font-semibold text-primary hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary-dark disabled:opacity-50"
+            >
+              {busy ? "Please wait…" : "Sign in"}
+            </button>
+            <Link
+              to="/"
+              hash="contact"
+              className="block w-full rounded-lg border border-border bg-transparent px-4 py-2.5 text-center text-sm font-semibold text-foreground transition hover:bg-muted"
+            >
+              Request access
+            </Link>
+          </form>
+        ) : (
+          <form onSubmit={handleForgot} className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-text-secondary">Email</label>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary-dark disabled:opacity-50"
+            >
+              {busy ? "Sending…" : "Send reset link"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("signin")}
+              className="w-full rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
+            >
+              Back to sign in
+            </button>
+          </form>
+        )}
+
+        <p className="mt-6 text-center text-xs text-text-secondary">
+          <Link to="/" className="hover:text-primary">
+            ← Back to landing
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
