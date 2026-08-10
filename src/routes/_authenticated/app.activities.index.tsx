@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EmptyState, ErrorState, TableSkeleton } from "@/components/common";
 import { PageHeader, ToolbarButton, CrmToolbar } from "@/components/layout";
 import { ActivityDetailPanel } from "@/components/activities/ActivityDetailPanel";
@@ -13,21 +13,17 @@ export const Route = createFileRoute("/_authenticated/app/activities/")({
 
 type Filter = "all" | "call" | "email" | "task" | "meeting" | "document";
 type ActivitySort = "due" | "recent" | "owner";
-
-const filters: Array<{ label: string; value: Filter }> = [
-  { label: "All Activities", value: "all" },
-  { label: "Calls", value: "call" },
-  { label: "Emails", value: "email" },
-  { label: "Tasks", value: "task" },
-  { label: "Meetings", value: "meeting" },
-  { label: "Documents", value: "document" },
-];
+type StatusFilter = "all" | "pending" | "in_progress" | "completed" | "logged";
 
 function ActivitiesIndex() {
   const { data: activities, isLoading, isError, error, refetch } = useActivities();
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<ActivitySort>("due");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [personFilter, setPersonFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<ActivityItem | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -36,6 +32,13 @@ function ActivitiesIndex() {
     const q = search.trim().toLowerCase();
     const list = (activities ?? []).filter((item) => {
       const typeMatch = filter === "all" || item.type === filter;
+      const statusMatch =
+        statusFilter === "all" ||
+        (statusFilter === "logged"
+          ? item.type === "document"
+          : item.type !== "document" && item.status === statusFilter);
+      const personId = item.type === "document" ? item.actor?.id : item.owner?.id;
+      const personMatch = personFilter === "all" || personId === personFilter;
       const searchMatch =
         !q ||
         [
@@ -50,16 +53,40 @@ function ActivitiesIndex() {
         ]
           .filter(Boolean)
           .some((value) => value!.toLowerCase().includes(q));
-      return typeMatch && searchMatch;
+      return typeMatch && statusMatch && personMatch && searchMatch;
     });
 
     return list.sort((a, b) => {
-      if (sortKey === "owner")
-        return (a.owner?.full_name ?? "").localeCompare(b.owner?.full_name ?? "");
+      if (sortKey === "owner") return personName(a).localeCompare(personName(b));
       if (sortKey === "recent") return dateRank(b.created_at) - dateRank(a.created_at);
       return dueRank(a) - dueRank(b);
     });
-  }, [activities, filter, search, sortKey]);
+  }, [activities, filter, personFilter, search, sortKey, statusFilter]);
+
+  const people = useMemo(() => {
+    const options = new Map<string, string>();
+    for (const item of activities ?? []) {
+      const person = item.type === "document" ? item.actor : item.owner;
+      if (person?.id) options.set(person.id, person.full_name ?? "Unnamed user");
+    }
+    return [...options.entries()]
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [activities]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageStart = (currentPage - 1) * pageSize;
+  const visibleActivities = filtered.slice(pageStart, pageStart + pageSize);
+
+  useEffect(() => {
+    setPage(1);
+    setSelected(new Set());
+  }, [filter, pageSize, personFilter, search, sortKey, statusFilter]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount));
+  }, [pageCount]);
 
   const stats = useMemo(() => buildStats(activities ?? []), [activities]);
 
@@ -73,10 +100,18 @@ function ActivitiesIndex() {
   }
 
   function toggleAll() {
-    const selectable = filtered.filter((item) => item.type !== "document").map((item) => item.id);
-    setSelected((current) =>
-      current.size === selectable.length ? new Set() : new Set(selectable),
-    );
+    const selectable = visibleActivities
+      .filter((item) => item.type !== "document")
+      .map((item) => item.id);
+    setSelected((current) => {
+      const next = new Set(current);
+      const allSelected = selectable.every((id) => current.has(id));
+      for (const id of selectable) {
+        if (allSelected) next.delete(id);
+        else next.add(id);
+      }
+      return next;
+    });
   }
 
   return (
@@ -112,6 +147,25 @@ function ActivitiesIndex() {
             { value: "task", icon: "task_alt", label: "Tasks" },
             { value: "meeting", icon: "groups", label: "Meetings" },
             { value: "document", icon: "history_edu", label: "Documents" },
+          ]}
+          filters={[
+            {
+              label: "Status",
+              value: statusFilter,
+              onChange: (value) => setStatusFilter(value as StatusFilter),
+              options: [
+                { value: "pending", label: "Pending" },
+                { value: "in_progress", label: "In Progress" },
+                { value: "completed", label: "Completed" },
+                { value: "logged", label: "Logged Documents" },
+              ],
+            },
+            {
+              label: "Person",
+              value: personFilter,
+              onChange: setPersonFilter,
+              options: people,
+            },
           ]}
           sort={{
             value: sortKey,
@@ -154,7 +208,7 @@ function ActivitiesIndex() {
             </div>
           ) : (
             <ActivitiesTable
-              activities={filtered}
+              activities={visibleActivities}
               selected={selected}
               onToggle={toggle}
               onToggleAll={toggleAll}
@@ -162,14 +216,34 @@ function ActivitiesIndex() {
             />
           )}
 
-          <footer className="flex flex-col items-center justify-between gap-4 border-t border-border bg-card px-4 py-4 md:flex-row">
-            <span className="text-sm text-text-secondary">
-              Showing{" "}
-              <span className="font-bold text-foreground">1-{Math.min(filtered.length, 10)}</span>{" "}
-              of <span className="font-bold text-foreground">{filtered.length}</span> activities
-            </span>
-            <Pagination />
-          </footer>
+          {!isLoading && !isError && filtered.length > 0 ? (
+            <footer className="flex flex-col items-center justify-between gap-4 border-t border-border bg-card px-4 py-4 md:flex-row">
+              <span className="text-sm text-text-secondary">
+                Showing{" "}
+                <span className="font-bold text-foreground">
+                  {pageStart + 1}-{Math.min(pageStart + pageSize, filtered.length)}
+                </span>{" "}
+                of <span className="font-bold text-foreground">{filtered.length}</span> activities
+              </span>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <label className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
+                  Rows
+                  <select
+                    value={pageSize}
+                    onChange={(event) => setPageSize(Number(event.target.value))}
+                    className="h-8 rounded-lg border border-border bg-background px-2 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    {[10, 25, 50].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Pagination page={currentPage} pageCount={pageCount} onPageChange={setPage} />
+              </div>
+            </footer>
+          ) : null}
         </section>
 
         <section className="grid grid-cols-1 gap-6 md:grid-cols-4">
@@ -248,8 +322,10 @@ function ActivitiesTable({
             <th className="w-12 px-4 py-3 text-center">
               <input
                 checked={
-                  selected.size === activities.filter((item) => item.type !== "document").length &&
-                  selected.size > 0
+                  activities.some((item) => item.type !== "document") &&
+                  activities
+                    .filter((item) => item.type !== "document")
+                    .every((item) => selected.has(item.id))
                 }
                 onChange={onToggleAll}
                 className="h-4 w-4 rounded border-border text-primary"
@@ -446,25 +522,78 @@ function StatCard({
   );
 }
 
-function Pagination() {
+function Pagination({
+  page,
+  pageCount,
+  onPageChange,
+}: {
+  page: number;
+  pageCount: number;
+  onPageChange: (page: number) => void;
+}) {
+  const pages = paginationRange(page, pageCount);
   return (
     <div className="flex items-center gap-2">
-      <PageButton icon="chevron_left" />
-      <button className="flex h-8 w-8 items-center justify-center rounded bg-primary text-xs font-semibold text-white">
-        1
-      </button>
-      <PageButton>2</PageButton>
-      <PageButton>3</PageButton>
-      <span className="px-1 text-text-muted">...</span>
-      <PageButton>25</PageButton>
-      <PageButton icon="chevron_right" />
+      <PageButton
+        icon="chevron_left"
+        label="Previous page"
+        disabled={page === 1}
+        onClick={() => onPageChange(page - 1)}
+      />
+      {pages.map((item, index) =>
+        item === "ellipsis" ? (
+          <span key={`ellipsis-${index}`} className="px-1 text-text-muted">
+            ...
+          </span>
+        ) : (
+          <PageButton
+            key={item}
+            active={item === page}
+            label={`Page ${item}`}
+            onClick={() => onPageChange(item)}
+          >
+            {item}
+          </PageButton>
+        ),
+      )}
+      <PageButton
+        icon="chevron_right"
+        label="Next page"
+        disabled={page === pageCount}
+        onClick={() => onPageChange(page + 1)}
+      />
     </div>
   );
 }
 
-function PageButton({ children, icon }: { children?: React.ReactNode; icon?: string }) {
+function PageButton({
+  children,
+  icon,
+  label,
+  active,
+  disabled,
+  onClick,
+}: {
+  children?: React.ReactNode;
+  icon?: string;
+  label: string;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
   return (
-    <button className="flex h-8 w-8 items-center justify-center rounded border border-border text-xs font-semibold text-text-muted transition-colors hover:bg-muted">
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border text-text-secondary hover:bg-muted"
+      }`}
+    >
       {icon ? <span className="material-symbols-outlined text-[18px]">{icon}</span> : children}
     </button>
   );
@@ -525,4 +654,18 @@ function dueRank(item: ActivityItem) {
 
 function dateRank(value: string | null | undefined) {
   return value ? new Date(value).getTime() : 0;
+}
+
+function personName(item: ActivityItem) {
+  const person = item.type === "document" ? item.actor : item.owner;
+  return person?.full_name ?? "";
+}
+
+function paginationRange(page: number, pageCount: number): Array<number | "ellipsis"> {
+  if (pageCount <= 7) return Array.from({ length: pageCount }, (_, index) => index + 1);
+  if (page <= 4) return [1, 2, 3, 4, 5, "ellipsis", pageCount];
+  if (page >= pageCount - 3) {
+    return [1, "ellipsis", pageCount - 4, pageCount - 3, pageCount - 2, pageCount - 1, pageCount];
+  }
+  return [1, "ellipsis", page - 1, page, page + 1, "ellipsis", pageCount];
 }
