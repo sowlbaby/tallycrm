@@ -31,6 +31,11 @@ export interface ActivityItem {
   deal?: DealRow | null;
   company?: CompanyRow | null;
   owner?: ProfileRow | null;
+  actor?: ProfileRow | null;
+  document_type: string | null;
+  document_id: string | null;
+  document_action: string | null;
+  event_metadata: ActivityRow["event_metadata"];
   raw: ActivityRow | TaskRow;
 }
 
@@ -219,6 +224,7 @@ export function useCompleteActivityItem() {
 }
 
 export function canEditActivity(item: ActivityItem) {
+  if (item.type === "document") return false;
   if (item.locked) return false;
   const createdAt = new Date(item.created_at).getTime();
   return Date.now() - createdAt <= 15 * 60 * 1000;
@@ -234,7 +240,9 @@ function normalizeActivity(
   const deal = deals.find((item) => item.id === activity.deal_id) ?? null;
   const contact = contacts.find((item) => item.id === activity.contact_id) ?? null;
   const company =
-    companies.find((item) => item.id === (contact?.company_id ?? deal?.company_id)) ?? null;
+    companies.find(
+      (item) => item.id === (activity.company_id ?? contact?.company_id ?? deal?.company_id),
+    ) ?? null;
   const lockedByTime =
     !!activity.outcome && Date.now() - new Date(activity.created_at).getTime() > 15 * 60 * 1000;
 
@@ -255,6 +263,11 @@ function normalizeActivity(
     deal,
     company,
     owner: profiles.find((profile) => profile.id === activity.owner_id) ?? null,
+    actor: profiles.find((profile) => profile.id === activity.actor_id) ?? null,
+    document_type: activity.document_type,
+    document_id: activity.document_id,
+    document_action: activity.document_action,
+    event_metadata: activity.event_metadata,
     raw: activity,
   };
 }
@@ -295,6 +308,11 @@ function normalizeTask(
     deal,
     company,
     owner: profiles.find((profile) => profile.id === task.assigned_to) ?? null,
+    actor: null,
+    document_type: null,
+    document_id: null,
+    document_action: null,
+    event_metadata: null,
     raw: task,
   };
 }

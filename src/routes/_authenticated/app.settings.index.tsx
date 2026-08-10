@@ -1455,7 +1455,17 @@ function AuditLogPanel() {
             label="Entity Type"
             value={entity}
             onChange={setEntity}
-            options={["All Entities", "Lead", "Deal", "Task", "Contact", "Company"]}
+            options={[
+              "All Entities",
+              "Lead",
+              "Deal",
+              "Task",
+              "Contact",
+              "Company",
+              "Quotation",
+              "Invoice",
+              "Receipt",
+            ]}
           />
           <InputControl label="Start Date" value={startDate} onChange={setStartDate} />
           <InputControl label="End Date" value={endDate} onChange={setEndDate} />

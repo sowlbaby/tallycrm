@@ -16,11 +16,18 @@ export type Database = {
     Tables: {
       activities: {
         Row: {
+          actor_id: string | null
+          audit_log_id: string | null
+          company_id: string | null
           contact_id: string | null
           created_at: string
           deal_id: string | null
+          document_action: string | null
+          document_id: string | null
+          document_type: string | null
           due_at: string | null
           duration_minutes: number | null
+          event_metadata: Json | null
           id: string
           last_modified_by: string | null
           locked_at: string | null
@@ -33,11 +40,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          actor_id?: string | null
+          audit_log_id?: string | null
+          company_id?: string | null
           contact_id?: string | null
           created_at?: string
           deal_id?: string | null
+          document_action?: string | null
+          document_id?: string | null
+          document_type?: string | null
           due_at?: string | null
           duration_minutes?: number | null
+          event_metadata?: Json | null
           id?: string
           last_modified_by?: string | null
           locked_at?: string | null
@@ -50,11 +64,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          actor_id?: string | null
+          audit_log_id?: string | null
+          company_id?: string | null
           contact_id?: string | null
           created_at?: string
           deal_id?: string | null
+          document_action?: string | null
+          document_id?: string | null
+          document_type?: string | null
           due_at?: string | null
           duration_minutes?: number | null
+          event_metadata?: Json | null
           id?: string
           last_modified_by?: string | null
           locked_at?: string | null
@@ -67,6 +88,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "activities_audit_log_id_fkey"
+            columns: ["audit_log_id"]
+            isOneToOne: false
+            referencedRelation: "audit_log"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "activities_contact_id_fkey"
             columns: ["contact_id"]
@@ -2236,6 +2271,14 @@ export type Database = {
         Returns: undefined
       }
       revise_quote: { Args: { _quote_id: string }; Returns: string }
+      replace_invoice_line_items: {
+        Args: { _invoice_id: string; _lines: Json }
+        Returns: undefined
+      }
+      replace_quote_line_items: {
+        Args: { _lines: Json; _quote_id: string }
+        Returns: undefined
+      }
       set_user_role: {
         Args: {
           target_role: Database["public"]["Enums"]["app_role"]
@@ -2249,7 +2292,7 @@ export type Database = {
       }
     }
     Enums: {
-      activity_type: "call" | "email" | "meeting" | "demo" | "proposal" | "note"
+      activity_type: "call" | "email" | "meeting" | "demo" | "proposal" | "note" | "document"
       app_role: "admin" | "manager" | "rep"
       invoice_status:
         | "draft"
@@ -2397,7 +2440,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      activity_type: ["call", "email", "meeting", "demo", "proposal", "note"],
+      activity_type: ["call", "email", "meeting", "demo", "proposal", "note", "document"],
       app_role: ["admin", "manager", "rep"],
       invoice_status: [
         "draft",

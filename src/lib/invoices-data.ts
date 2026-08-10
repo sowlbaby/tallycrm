@@ -328,26 +328,10 @@ export function useSaveInvoiceLineItems() {
       invoiceId: string;
       lines: InvoiceLineItemDraft[];
     }) => {
-      const existingRes = await supabase
-        .from("invoice_line_items")
-        .select("id")
-        .eq("invoice_id", invoiceId);
-      if (existingRes.error) throw existingRes.error;
-
-      const keptIds = new Set(lines.map((line) => line.id).filter(Boolean) as string[]);
-      const removed = ((existingRes.data ?? []) as Array<{ id: string }>)
-        .map((row) => row.id)
-        .filter((id) => !keptIds.has(id));
-
-      if (removed.length) {
-        const { error } = await supabase.from("invoice_line_items").delete().in("id", removed);
-        if (error) throw error;
-      }
-
-      for (const [index, line] of lines.entries()) {
-        const payload = {
-          invoice_id: invoiceId,
-          position: index,
+      const { error } = await supabase.rpc("replace_invoice_line_items", {
+        _invoice_id: invoiceId,
+        _lines: lines.map((line) => ({
+          id: line.id ?? null,
           catalog_item_id: line.catalog_item_id || null,
           name: line.name.trim(),
           description: line.description?.trim() || null,
@@ -356,19 +340,9 @@ export function useSaveInvoiceLineItems() {
           unit_price: line.unit_price,
           discount_percent: line.discount_percent,
           tax_rate: line.tax_rate,
-        } satisfies InvoiceLineItemInsert;
-
-        if (line.id) {
-          const { error } = await supabase
-            .from("invoice_line_items")
-            .update(payload)
-            .eq("id", line.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from("invoice_line_items").insert(payload);
-          if (error) throw error;
-        }
-      }
+        })),
+      });
+      if (error) throw error;
     },
     onSuccess: (_data, vars) => invalidateInvoices(qc, vars.invoiceId),
   });
@@ -393,6 +367,11 @@ export function useDeleteInvoice() {
 function invalidateInvoices(qc: ReturnType<typeof useQueryClient>, invoiceId?: string) {
   qc.invalidateQueries({ queryKey: invoicesKey });
   qc.invalidateQueries({ queryKey: ["invoices", "quote"] });
+  qc.invalidateQueries({ queryKey: ["activities"] });
+  qc.invalidateQueries({ queryKey: ["dashboard", "activity"] });
+  qc.invalidateQueries({ queryKey: ["contact"] });
+  qc.invalidateQueries({ queryKey: ["company"] });
+  qc.invalidateQueries({ queryKey: ["deal"] });
   if (invoiceId) qc.invalidateQueries({ queryKey: ["invoice", invoiceId] });
 }
 

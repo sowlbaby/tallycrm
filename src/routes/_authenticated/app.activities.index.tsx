@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/app/activities/")({
   component: ActivitiesIndex,
 });
 
-type Filter = "all" | "call" | "email" | "task" | "meeting";
+type Filter = "all" | "call" | "email" | "task" | "meeting" | "document";
 type ActivitySort = "due" | "recent" | "owner";
 
 const filters: Array<{ label: string; value: Filter }> = [
@@ -20,6 +20,7 @@ const filters: Array<{ label: string; value: Filter }> = [
   { label: "Emails", value: "email" },
   { label: "Tasks", value: "task" },
   { label: "Meetings", value: "meeting" },
+  { label: "Documents", value: "document" },
 ];
 
 function ActivitiesIndex() {
@@ -45,6 +46,7 @@ function ActivitiesIndex() {
           item.deal?.name,
           item.company?.name,
           item.owner?.full_name,
+          item.actor?.full_name,
         ]
           .filter(Boolean)
           .some((value) => value!.toLowerCase().includes(q));
@@ -55,7 +57,7 @@ function ActivitiesIndex() {
       if (sortKey === "owner")
         return (a.owner?.full_name ?? "").localeCompare(b.owner?.full_name ?? "");
       if (sortKey === "recent") return dateRank(b.created_at) - dateRank(a.created_at);
-      return dateRank(a.due_at) - dateRank(b.due_at);
+      return dueRank(a) - dueRank(b);
     });
   }, [activities, filter, search, sortKey]);
 
@@ -71,8 +73,9 @@ function ActivitiesIndex() {
   }
 
   function toggleAll() {
+    const selectable = filtered.filter((item) => item.type !== "document").map((item) => item.id);
     setSelected((current) =>
-      current.size === filtered.length ? new Set() : new Set(filtered.map((item) => item.id)),
+      current.size === selectable.length ? new Set() : new Set(selectable),
     );
   }
 
@@ -108,6 +111,7 @@ function ActivitiesIndex() {
             { value: "email", icon: "mail", label: "Emails" },
             { value: "task", icon: "task_alt", label: "Tasks" },
             { value: "meeting", icon: "groups", label: "Meetings" },
+            { value: "document", icon: "history_edu", label: "Documents" },
           ]}
           sort={{
             value: sortKey,
@@ -243,7 +247,10 @@ function ActivitiesTable({
           <tr>
             <th className="w-12 px-4 py-3 text-center">
               <input
-                checked={selected.size === activities.length && activities.length > 0}
+                checked={
+                  selected.size === activities.filter((item) => item.type !== "document").length &&
+                  selected.size > 0
+                }
                 onChange={onToggleAll}
                 className="h-4 w-4 rounded border-border text-primary"
                 type="checkbox"
@@ -253,7 +260,7 @@ function ActivitiesTable({
             <HeaderCell>Type</HeaderCell>
             <HeaderCell>Status</HeaderCell>
             <HeaderCell>Due Date</HeaderCell>
-            <HeaderCell>Owner</HeaderCell>
+            <HeaderCell>Owner / Actor</HeaderCell>
             <HeaderCell>Created At</HeaderCell>
             <HeaderCell align="right">Actions</HeaderCell>
           </tr>
@@ -268,12 +275,18 @@ function ActivitiesTable({
               } ${isOverdue(item) ? "border-l-4 border-danger" : ""}`}
             >
               <td onClick={(e) => e.stopPropagation()} className="px-4 py-3 text-center">
-                <input
-                  checked={selected.has(item.id)}
-                  onChange={() => onToggle(item.id)}
-                  className="h-4 w-4 rounded border-border text-primary"
-                  type="checkbox"
-                />
+                {item.type === "document" ? (
+                  <span className="material-symbols-outlined text-[16px] text-text-muted">
+                    lock
+                  </span>
+                ) : (
+                  <input
+                    checked={selected.has(item.id)}
+                    onChange={() => onToggle(item.id)}
+                    className="h-4 w-4 rounded border-border text-primary"
+                    type="checkbox"
+                  />
+                )}
               </td>
               <td className="px-4 py-3">
                 <div className="flex flex-col">
@@ -291,40 +304,62 @@ function ActivitiesTable({
                 <TypeBadge type={item.type} />
               </td>
               <td className="px-4 py-3">
-                <StatusBadge status={item.status} />
+                <StatusBadge status={item.status} document={item.type === "document"} />
               </td>
               <td className="px-4 py-3">
                 <div className="flex flex-col">
                   <span
                     className={isOverdue(item) ? "font-semibold text-danger" : "text-foreground"}
                   >
-                    {item.due_at ? new Date(item.due_at).toLocaleDateString() : "No date"}
+                    {item.type === "document"
+                      ? new Date(item.created_at).toLocaleDateString()
+                      : item.due_at
+                        ? new Date(item.due_at).toLocaleDateString()
+                        : "No date"}
                   </span>
                   <span
                     className={`text-sm ${isOverdue(item) ? "text-danger" : "text-text-muted"}`}
                   >
-                    {item.due_at ? formatRelative(item.due_at) : "Unscheduled"}
+                    {item.type === "document"
+                      ? formatRelative(item.created_at)
+                      : item.due_at
+                        ? formatRelative(item.due_at)
+                        : "Unscheduled"}
                   </span>
                 </div>
               </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Avatar label={item.owner?.full_name ?? "Unassigned"} />
-                  <span>{item.owner?.full_name ?? "Unassigned"}</span>
+                  <Avatar
+                    label={
+                      item.type === "document"
+                        ? (item.actor?.full_name ?? "System")
+                        : (item.owner?.full_name ?? "Unassigned")
+                    }
+                  />
+                  <span>
+                    {item.type === "document"
+                      ? (item.actor?.full_name ?? "System")
+                      : (item.owner?.full_name ?? "Unassigned")}
+                  </span>
                 </div>
               </td>
               <td className="px-4 py-3 text-text-muted">
                 {new Date(item.created_at).toLocaleDateString()}
               </td>
               <td onClick={(e) => e.stopPropagation()} className="px-4 py-3 text-right">
-                <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button className="rounded p-1 text-text-muted hover:bg-muted hover:text-primary">
-                    <span className="material-symbols-outlined">edit_square</span>
-                  </button>
-                  <button className="rounded p-1 text-text-muted hover:bg-muted hover:text-danger">
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
+                {item.type !== "document" ? (
+                  <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button className="rounded p-1 text-text-muted hover:bg-muted hover:text-primary">
+                      <span className="material-symbols-outlined">edit_square</span>
+                    </button>
+                    <button className="rounded p-1 text-text-muted hover:bg-muted hover:text-danger">
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-xs font-semibold text-text-muted">Read only</span>
+                )}
               </td>
             </tr>
           ))}
@@ -364,7 +399,14 @@ function TypeBadge({ type }: { type: ActivityType }) {
   );
 }
 
-function StatusBadge({ status }: { status: ActivityItem["status"] }) {
+function StatusBadge({ status, document }: { status: ActivityItem["status"]; document?: boolean }) {
+  if (document) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-semibold text-text-secondary">
+        Logged
+      </span>
+    );
+  }
   const meta =
     status === "completed"
       ? { label: "Completed", tone: "bg-green-100 text-green-700" }
@@ -454,6 +496,8 @@ function typeMeta(type: ActivityType) {
     return { label: "Demo", icon: "present_to_all", tone: "bg-blue-100 text-blue-700" };
   if (type === "proposal")
     return { label: "Proposal", icon: "description", tone: "bg-purple-100 text-purple-700" };
+  if (type === "document")
+    return { label: "Document", icon: "history_edu", tone: "bg-cyan-100 text-cyan-800" };
   return { label: "Note", icon: "edit_note", tone: "bg-muted text-text-secondary" };
 }
 
@@ -462,15 +506,21 @@ function isOverdue(item: ActivityItem) {
 }
 
 function buildStats(items: ActivityItem[]) {
-  const incomplete = items
+  const workItems = items.filter((item) => item.type !== "document");
+  const incomplete = workItems
     .filter((item) => item.status !== "completed" && item.due_at)
     .sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime());
 
   return {
-    completed: items.filter((item) => item.status === "completed").length,
-    overdue: items.filter(isOverdue).length,
+    completed: workItems.filter((item) => item.status === "completed").length,
+    overdue: workItems.filter(isOverdue).length,
     nextPriority: incomplete[0] ?? null,
   };
+}
+
+function dueRank(item: ActivityItem) {
+  if (item.type === "document") return Number.MAX_SAFE_INTEGER;
+  return item.due_at ? new Date(item.due_at).getTime() : Number.MAX_SAFE_INTEGER - 1;
 }
 
 function dateRank(value: string | null | undefined) {

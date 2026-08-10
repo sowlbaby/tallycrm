@@ -10,6 +10,7 @@ const ICONS: Record<string, string> = {
   demo: "slideshow",
   proposal: "description",
   note: "sticky_note_2",
+  document: "history_edu",
 };
 
 export function ActivityFeed() {
@@ -34,7 +35,7 @@ export function ActivityFeed() {
         <EmptyState
           icon={<Icon name="history" className="h-6 w-6" />}
           title="No activity yet"
-          description="Calls, emails and meetings appear here as your team logs them."
+          description="Calls, emails, meetings, and document events appear here."
         />
       ) : (
         <ul className="space-y-3">

@@ -396,7 +396,7 @@ function ActivitiesPanel({ activities }: { activities: ActivityRow[] }) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-[16px] font-semibold text-foreground">Upcoming Activities</h3>
+        <h3 className="text-[16px] font-semibold text-foreground">Activities and History</h3>
         <button className="text-xs font-bold text-primary">+ New Task</button>
       </div>
       <div className="space-y-2">
@@ -406,7 +406,13 @@ function ActivitiesPanel({ activities }: { activities: ActivityRow[] }) {
               key={activity.id}
               className="flex items-center gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-muted"
             >
-              <input className="h-5 w-5 rounded border-border text-primary" type="checkbox" />
+              {activity.type === "document" ? (
+                <span className="material-symbols-outlined text-[20px] text-text-muted">
+                  history_edu
+                </span>
+              ) : (
+                <input className="h-5 w-5 rounded border-border text-primary" type="checkbox" />
+              )}
               <div className="flex-1">
                 <p className="font-semibold text-foreground">{activity.title}</p>
                 <p className="text-sm text-text-secondary">
@@ -574,6 +580,7 @@ function AvatarLabel({ label, size }: { label: string; size: "sm" | "md" | "lg" 
 }
 
 function activityIcon(activity: ActivityRow) {
+  if (activity.type === "document") return "history_edu";
   if (activity.type === "email") return "mail";
   if (activity.type === "call") return "call";
   if (activity.type === "meeting") return "event";

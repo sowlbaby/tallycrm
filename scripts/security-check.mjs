@@ -56,6 +56,29 @@ assert(
 );
 assert(!leadCapture.includes("allowedSuffixes"), "Lead capture must not allow broad host suffixes");
 
+const documentActivityMigration = read(
+  "supabase/migrations/20260810120100_document_activity_logging.sql",
+);
+assert(
+  documentActivityMigration.includes("INSERT INTO public.audit_log") &&
+    documentActivityMigration.includes("INSERT INTO public.activities"),
+  "Document events must be written to both the audit log and activity projection",
+);
+assert(
+  documentActivityMigration.includes("CREATE TRIGGER guard_document_activity"),
+  "Document activities must have an immutability trigger",
+);
+assert(
+  documentActivityMigration.includes("OLD.type = 'document'") &&
+    documentActivityMigration.includes("Document activities are immutable"),
+  "Document activity updates and deletes must be rejected",
+);
+assert(
+  documentActivityMigration.includes("IF NOT public.can_access_quote(_quote_id)") &&
+    documentActivityMigration.includes("IF NOT public.can_access_invoice(_invoice_id)"),
+  "Transactional line-item functions must enforce document access",
+);
+
 const emailFunction = read("supabase/functions/send-automation-email/index.ts");
 assert(
   emailFunction.includes("AUTOMATION_DISPATCH_SECRET"),

@@ -246,6 +246,11 @@ function invalidateReceipts(
 ) {
   qc.invalidateQueries({ queryKey: receiptsKey });
   qc.invalidateQueries({ queryKey: ["receiptable_invoices"] });
+  qc.invalidateQueries({ queryKey: ["activities"] });
+  qc.invalidateQueries({ queryKey: ["dashboard", "activity"] });
+  qc.invalidateQueries({ queryKey: ["contact"] });
+  qc.invalidateQueries({ queryKey: ["company"] });
+  qc.invalidateQueries({ queryKey: ["deal"] });
   if (receiptId) qc.invalidateQueries({ queryKey: ["receipt", receiptId] });
   if (invoiceId) {
     qc.invalidateQueries({ queryKey: ["invoice", invoiceId] });
