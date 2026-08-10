@@ -276,7 +276,14 @@ function ActivitiesPanel({ contact }: { contact: ContactDetail }) {
   const items = contact.activities.length
     ? contact.activities.map((activity) => ({
         id: activity.id,
-        icon: activity.type === "call" ? "call" : activity.type === "meeting" ? "event" : "mail",
+        icon:
+          activity.type === "document"
+            ? "history_edu"
+            : activity.type === "call"
+              ? "call"
+              : activity.type === "meeting"
+                ? "event"
+                : "mail",
         title: activity.title,
         time: activity.created_at,
         body: activity.notes || activity.type,

@@ -15,6 +15,11 @@ export type ReceiptInvoice = Pick<
   | "invoice_number"
   | "title"
   | "status"
+  | "subtotal"
+  | "discount_type"
+  | "discount_value"
+  | "discount_amount"
+  | "tax_amount"
   | "total"
   | "amount_paid"
   | "currency"
@@ -49,7 +54,7 @@ export interface CreateReceiptInput {
 export const receiptsKey = ["receipts"] as const;
 
 const INVOICE_SELECT =
-  "id,invoice_number,title,status,total,amount_paid,currency,due_date,contact_id,company_id,deal_id,quote_id,assigned_to";
+  "id,invoice_number,title,status,subtotal,discount_type,discount_value,discount_amount,tax_amount,total,amount_paid,currency,due_date,contact_id,company_id,deal_id,quote_id,assigned_to";
 
 export function useReceipts() {
   return useQuery({
@@ -241,6 +246,11 @@ function invalidateReceipts(
 ) {
   qc.invalidateQueries({ queryKey: receiptsKey });
   qc.invalidateQueries({ queryKey: ["receiptable_invoices"] });
+  qc.invalidateQueries({ queryKey: ["activities"] });
+  qc.invalidateQueries({ queryKey: ["dashboard", "activity"] });
+  qc.invalidateQueries({ queryKey: ["contact"] });
+  qc.invalidateQueries({ queryKey: ["company"] });
+  qc.invalidateQueries({ queryKey: ["deal"] });
   if (receiptId) qc.invalidateQueries({ queryKey: ["receipt", receiptId] });
   if (invoiceId) {
     qc.invalidateQueries({ queryKey: ["invoice", invoiceId] });

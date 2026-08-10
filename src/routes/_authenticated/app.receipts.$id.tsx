@@ -32,6 +32,10 @@ function ReceiptDetailPage() {
     );
   }
 
+  const invoiceBalance = receipt.invoice
+    ? Number(receipt.invoice.total ?? 0) - Number(receipt.invoice.amount_paid ?? 0)
+    : 0;
+
   async function handleVoid() {
     if (
       !window.confirm(`Void receipt ${receipt!.receipt_number}? The invoice balance will update.`)
@@ -147,6 +151,36 @@ function ReceiptDetailPage() {
                   {formatMoney(Number(receipt.invoice.amount_paid), receipt.invoice.currency)} paid
                   of {formatMoney(Number(receipt.invoice.total), receipt.invoice.currency)}
                 </p>
+                <dl className="mt-4 space-y-2 border-t border-border pt-3 text-xs">
+                  <Detail
+                    label="Subtotal"
+                    value={formatMoney(Number(receipt.invoice.subtotal), receipt.invoice.currency)}
+                  />
+                  {Number(receipt.invoice.discount_amount) > 0 ? (
+                    <Detail
+                      label={
+                        receipt.invoice.discount_type === "percent"
+                          ? `Discount (${Number(receipt.invoice.discount_value)}%)`
+                          : "Discount"
+                      }
+                      value={`-${formatMoney(
+                        Number(receipt.invoice.discount_amount),
+                        receipt.invoice.currency,
+                      )}`}
+                    />
+                  ) : null}
+                  <Detail
+                    label="Tax"
+                    value={formatMoney(
+                      Number(receipt.invoice.tax_amount),
+                      receipt.invoice.currency,
+                    )}
+                  />
+                  <Detail
+                    label="Balance"
+                    value={formatMoney(invoiceBalance, receipt.invoice.currency)}
+                  />
+                </dl>
               </Link>
             ) : (
               <p className="mt-3 text-sm text-text-muted">Invoice not available.</p>

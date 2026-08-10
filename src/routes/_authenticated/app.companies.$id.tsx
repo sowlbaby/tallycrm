@@ -400,7 +400,12 @@ function ActivitiesPanel({ company }: { company: CompanyDetail }) {
   const items = company.activities.length
     ? company.activities.map((activity) => ({
         id: activity.id,
-        icon: activity.type === "call" ? "call" : "edit_calendar",
+        icon:
+          activity.type === "document"
+            ? "history_edu"
+            : activity.type === "call"
+              ? "call"
+              : "edit_calendar",
         title: activity.title,
         time: activity.created_at,
         body: activity.notes || activity.type,

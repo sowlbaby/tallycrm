@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useModalA11y } from "@/components/common/use-modal-a11y";
 import { formatMoney } from "@/lib/format";
-import { calculateQuoteTotals } from "@/lib/quote-totals";
+import { calculateQuoteTotals, type QuoteDiscountType } from "@/lib/quote-totals";
 import { type InvoiceLineItemDraft, useCreateInvoice } from "@/lib/invoices-data";
 import { useQuoteFormOptions } from "@/lib/quotes-data";
 
@@ -50,6 +50,8 @@ export function AddInvoiceModal({ open, onOpenChange }: AddInvoiceModalProps) {
   const [currency, setCurrency] = useState("GHS");
   const [dueDate, setDueDate] = useState("");
   const [lines, setLines] = useState<InvoiceLineItemDraft[]>([blankLine()]);
+  const [discountType, setDiscountType] = useState<QuoteDiscountType>("none");
+  const [discountValue, setDiscountValue] = useState(0);
   const [showOptional, setShowOptional] = useState(false);
   const [notes, setNotes] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("");
@@ -73,7 +75,7 @@ export function AddInvoiceModal({ open, onOpenChange }: AddInvoiceModalProps) {
 
   if (!open) return null;
 
-  const totals = calculateQuoteTotals(lines, "none", 0);
+  const totals = calculateQuoteTotals(lines, discountType, discountValue);
 
   function patchLine(index: number, patch: Partial<InvoiceLineItemDraft>) {
     setLines((current) =>
@@ -118,6 +120,8 @@ export function AddInvoiceModal({ open, onOpenChange }: AddInvoiceModalProps) {
         company_id: companyId || null,
         currency,
         due_date: dueDate || null,
+        discount_type: discountType,
+        discount_value: discountType === "none" ? 0 : discountValue,
         notes: notes.trim() || null,
         payment_terms: paymentTerms.trim() || options?.defaults.terms || null,
         lines: filled,
@@ -126,6 +130,8 @@ export function AddInvoiceModal({ open, onOpenChange }: AddInvoiceModalProps) {
       onOpenChange(false);
       setTitle("");
       setNotes("");
+      setDiscountType("none");
+      setDiscountValue(0);
       setLines([blankLine(options?.defaults.taxRate ?? 0)]);
       navigate({ to: "/app/invoices/$id", params: { id: invoice.id } });
     } catch (error) {
@@ -258,6 +264,31 @@ export function AddInvoiceModal({ open, onOpenChange }: AddInvoiceModalProps) {
                       aria-label="Unit price"
                       className="w-28 rounded-lg border border-border bg-card px-2 py-2 text-right text-sm outline-none focus:border-primary"
                     />
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.01}
+                      value={line.discount_percent}
+                      onChange={(event) =>
+                        patchLine(index, { discount_percent: Number(event.target.value) || 0 })
+                      }
+                      aria-label="Line discount percent"
+                      title="Line discount percent"
+                      className="w-20 rounded-lg border border-border bg-card px-2 py-2 text-right text-sm outline-none focus:border-primary"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={line.tax_rate}
+                      onChange={(event) =>
+                        patchLine(index, { tax_rate: Number(event.target.value) || 0 })
+                      }
+                      aria-label="Tax rate"
+                      title="Tax rate"
+                      className="w-20 rounded-lg border border-border bg-card px-2 py-2 text-right text-sm outline-none focus:border-primary"
+                    />
                     <span className="w-28 text-right text-sm font-semibold text-foreground">
                       {formatMoney(totals.lines[index]?.line_total ?? 0, currency)}
                     </span>
@@ -279,11 +310,62 @@ export function AddInvoiceModal({ open, onOpenChange }: AddInvoiceModalProps) {
                 ))}
               </div>
 
-              <div className="flex justify-between border-t border-border bg-muted px-4 py-3 text-sm">
-                <span className="text-text-secondary">Total</span>
-                <span className="font-bold text-foreground">
-                  {formatMoney(totals.total, currency)}
-                </span>
+              <div className="border-t border-border bg-muted px-4 py-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_120px_180px]">
+                  <Field label="Invoice Discount">
+                    <select
+                      value={discountType}
+                      onChange={(event) => {
+                        const next = event.target.value as QuoteDiscountType;
+                        setDiscountType(next);
+                        if (next === "none") setDiscountValue(0);
+                      }}
+                      className="deal-input appearance-none bg-card"
+                    >
+                      <option value="none">No invoice-level discount</option>
+                      <option value="percent">Percent</option>
+                      <option value="amount">Fixed amount</option>
+                    </select>
+                  </Field>
+                  <Field label="Value">
+                    <input
+                      type="number"
+                      min={0}
+                      max={discountType === "percent" ? 100 : undefined}
+                      step={0.01}
+                      value={discountValue}
+                      onChange={(event) => setDiscountValue(Number(event.target.value) || 0)}
+                      disabled={discountType === "none"}
+                      className="deal-input bg-card text-right disabled:opacity-60"
+                    />
+                  </Field>
+                  <dl className="space-y-1 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-text-secondary">Subtotal</dt>
+                      <dd className="font-semibold text-foreground">
+                        {formatMoney(totals.subtotal, currency)}
+                      </dd>
+                    </div>
+                    {totals.discount_amount > 0 ? (
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-text-secondary">Discount</dt>
+                        <dd className="font-semibold text-foreground">
+                          -{formatMoney(totals.discount_amount, currency)}
+                        </dd>
+                      </div>
+                    ) : null}
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-text-secondary">Tax</dt>
+                      <dd className="font-semibold text-foreground">
+                        {formatMoney(totals.tax_amount, currency)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3 border-t border-border pt-1 font-bold">
+                      <dt className="text-foreground">Total</dt>
+                      <dd className="text-foreground">{formatMoney(totals.total, currency)}</dd>
+                    </div>
+                  </dl>
+                </div>
               </div>
             </div>
 

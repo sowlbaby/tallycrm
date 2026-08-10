@@ -15,6 +15,9 @@ export function ReceiptDocument({ receipt, issuer }: ReceiptDocumentProps) {
     receipt.contact?.phone ?? receipt.company?.phone,
     receipt.company?.address,
   ].filter(Boolean) as string[];
+  const invoiceBalance = receipt.invoice
+    ? Number(receipt.invoice.total ?? 0) - Number(receipt.invoice.amount_paid ?? 0)
+    : 0;
 
   return (
     <article className="quote-document mx-auto w-full max-w-[820px] bg-white p-10 text-[13px] leading-relaxed text-neutral-900 shadow-[var(--shadow-card)] print:max-w-none print:p-0 print:shadow-none">
@@ -138,6 +141,52 @@ export function ReceiptDocument({ receipt, issuer }: ReceiptDocumentProps) {
               </tr>
             </tbody>
           </table>
+          <div className="mt-4 flex justify-end">
+            <dl className="w-full max-w-[300px] space-y-1.5 text-[12px]">
+              <div className="flex justify-between">
+                <dt className="text-neutral-600">Subtotal</dt>
+                <dd className="font-semibold">
+                  {formatMoney(Number(receipt.invoice.subtotal), receipt.invoice.currency)}
+                </dd>
+              </div>
+              {Number(receipt.invoice.discount_amount) > 0 ? (
+                <div className="flex justify-between">
+                  <dt className="text-neutral-600">
+                    Discount
+                    {receipt.invoice.discount_type === "percent"
+                      ? ` (${Number(receipt.invoice.discount_value)}%)`
+                      : ""}
+                  </dt>
+                  <dd className="font-semibold">
+                    -
+                    {formatMoney(Number(receipt.invoice.discount_amount), receipt.invoice.currency)}
+                  </dd>
+                </div>
+              ) : null}
+              <div className="flex justify-between">
+                <dt className="text-neutral-600">Tax</dt>
+                <dd className="font-semibold">
+                  {formatMoney(Number(receipt.invoice.tax_amount), receipt.invoice.currency)}
+                </dd>
+              </div>
+              <div className="flex justify-between border-t border-neutral-300 pt-1.5">
+                <dt className="text-neutral-600">Invoice total</dt>
+                <dd className="font-semibold">
+                  {formatMoney(Number(receipt.invoice.total), receipt.invoice.currency)}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-neutral-600">Paid to date</dt>
+                <dd className="font-semibold">
+                  {formatMoney(Number(receipt.invoice.amount_paid), receipt.invoice.currency)}
+                </dd>
+              </div>
+              <div className="flex justify-between border-t-2 border-neutral-900 pt-2 text-[14px] font-bold">
+                <dt>Balance</dt>
+                <dd>{formatMoney(invoiceBalance, receipt.invoice.currency)}</dd>
+              </div>
+            </dl>
+          </div>
         </section>
       ) : null}
 

@@ -108,16 +108,15 @@ export function useCompany(id: string | undefined) {
 
       let activities: ActivityRow[] = [];
       const contactIds = contacts.map((contact) => contact.id);
-      if (contactIds.length > 0) {
-        const activitiesRes = await supabase
-          .from("activities")
-          .select("*")
-          .in("contact_id", contactIds)
-          .order("created_at", { ascending: false })
-          .limit(50);
-        if (activitiesRes.error) throw activitiesRes.error;
-        activities = (activitiesRes.data ?? []) as ActivityRow[];
-      }
+      let activitiesQuery = supabase.from("activities").select("*");
+      activitiesQuery = contactIds.length
+        ? activitiesQuery.or(`company_id.eq.${id!},contact_id.in.(${contactIds.join(",")})`)
+        : activitiesQuery.eq("company_id", id!);
+      const activitiesRes = await activitiesQuery
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (activitiesRes.error) throw activitiesRes.error;
+      activities = (activitiesRes.data ?? []) as ActivityRow[];
 
       return {
         ...summary,

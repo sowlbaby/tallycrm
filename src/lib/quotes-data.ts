@@ -291,26 +291,10 @@ export function useSaveQuoteLineItems() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ quoteId, lines }: { quoteId: string; lines: QuoteLineItemDraft[] }) => {
-      const existingRes = await supabase
-        .from("quote_line_items")
-        .select("id")
-        .eq("quote_id", quoteId);
-      if (existingRes.error) throw existingRes.error;
-
-      const keptIds = new Set(lines.map((line) => line.id).filter(Boolean) as string[]);
-      const removed = ((existingRes.data ?? []) as Array<{ id: string }>)
-        .map((row) => row.id)
-        .filter((id) => !keptIds.has(id));
-
-      if (removed.length) {
-        const { error } = await supabase.from("quote_line_items").delete().in("id", removed);
-        if (error) throw error;
-      }
-
-      for (const [index, line] of lines.entries()) {
-        const payload = {
-          quote_id: quoteId,
-          position: index,
+      const { error } = await supabase.rpc("replace_quote_line_items", {
+        _quote_id: quoteId,
+        _lines: lines.map((line) => ({
+          id: line.id ?? null,
           catalog_item_id: line.catalog_item_id || null,
           name: line.name.trim(),
           description: line.description?.trim() || null,
@@ -319,19 +303,9 @@ export function useSaveQuoteLineItems() {
           unit_price: line.unit_price,
           discount_percent: line.discount_percent,
           tax_rate: line.tax_rate,
-        } satisfies QuoteLineItemInsert;
-
-        if (line.id) {
-          const { error } = await supabase
-            .from("quote_line_items")
-            .update(payload)
-            .eq("id", line.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from("quote_line_items").insert(payload);
-          if (error) throw error;
-        }
-      }
+        })),
+      });
+      if (error) throw error;
     },
     onSuccess: (_data, vars) => invalidateQuotes(qc, vars.quoteId),
   });
@@ -560,6 +534,11 @@ export function useDeleteCatalogItem() {
 
 function invalidateQuotes(qc: ReturnType<typeof useQueryClient>, quoteId?: string) {
   qc.invalidateQueries({ queryKey: quotesKey });
+  qc.invalidateQueries({ queryKey: ["activities"] });
+  qc.invalidateQueries({ queryKey: ["dashboard", "activity"] });
+  qc.invalidateQueries({ queryKey: ["contact"] });
+  qc.invalidateQueries({ queryKey: ["company"] });
+  qc.invalidateQueries({ queryKey: ["deal"] });
   if (quoteId) qc.invalidateQueries({ queryKey: ["quote", quoteId] });
 }
 
