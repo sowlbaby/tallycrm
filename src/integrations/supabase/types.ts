@@ -159,6 +159,7 @@ export type Database = {
           quote_number_prefix: string
           quote_terms: string | null
           receipt_number_prefix: string
+          ticket_number_prefix: string
           time_zone: string
           timezone: string
           updated_at: string
@@ -203,6 +204,7 @@ export type Database = {
           quote_number_prefix?: string
           quote_terms?: string | null
           receipt_number_prefix?: string
+          ticket_number_prefix?: string
           time_zone?: string
           timezone?: string
           updated_at?: string
@@ -247,6 +249,7 @@ export type Database = {
           quote_number_prefix?: string
           quote_terms?: string | null
           receipt_number_prefix?: string
+          ticket_number_prefix?: string
           time_zone?: string
           timezone?: string
           updated_at?: string
@@ -2062,6 +2065,161 @@ export type Database = {
           },
         ]
       }
+      support_ticket_comments: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_comments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          from_status:
+            | Database["public"]["Enums"]["support_ticket_status"]
+            | null
+          id: string
+          note: string | null
+          ticket_id: string
+          to_status: Database["public"]["Enums"]["support_ticket_status"]
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          from_status?:
+            | Database["public"]["Enums"]["support_ticket_status"]
+            | null
+          id?: string
+          note?: string | null
+          ticket_id: string
+          to_status: Database["public"]["Enums"]["support_ticket_status"]
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          from_status?:
+            | Database["public"]["Enums"]["support_ticket_status"]
+            | null
+          id?: string
+          note?: string | null
+          ticket_id?: string
+          to_status?: Database["public"]["Enums"]["support_ticket_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_status_history_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          company_id: string | null
+          contact_id: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          last_modified_by: string | null
+          opened_at: string
+          origin_node_id: string | null
+          priority: Database["public"]["Enums"]["support_ticket_priority"]
+          resolution: string | null
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["support_ticket_status"]
+          subject: string
+          ticket_number: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          last_modified_by?: string | null
+          opened_at?: string
+          origin_node_id?: string | null
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject: string
+          ticket_number: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          last_modified_by?: string | null
+          opened_at?: string
+          origin_node_id?: string | null
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject?: string
+          ticket_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_origin_node_id_fkey"
+            columns: ["origin_node_id"]
+            isOneToOne: false
+            referencedRelation: "sync_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_checkpoints: {
         Row: {
           created_at: string
@@ -2397,6 +2555,10 @@ export type Database = {
       }
       can_access_invoice: { Args: { _invoice_id: string }; Returns: boolean }
       can_access_quote: { Args: { _quote_id: string }; Returns: boolean }
+      can_access_support_ticket: {
+        Args: { _ticket_id: string }
+        Returns: boolean
+      }
       can_assign_owner: { Args: { _target: string }; Returns: boolean }
       capture_landing_lead: {
         Args: {
@@ -2487,6 +2649,7 @@ export type Database = {
       next_invoice_number: { Args: never; Returns: string }
       next_quote_number: { Args: never; Returns: string }
       next_receipt_number: { Args: never; Returns: string }
+      next_support_ticket_number: { Args: never; Returns: string }
       notify_user: {
         Args: {
           _body: string
@@ -2558,6 +2721,13 @@ export type Database = {
       quote_discount_type: "none" | "percent" | "amount"
       quote_status: "draft" | "sent" | "accepted" | "rejected" | "expired"
       receipt_status: "issued" | "void"
+      support_ticket_priority: "low" | "normal" | "high" | "urgent"
+      support_ticket_status:
+        | "open"
+        | "in_progress"
+        | "waiting_on_customer"
+        | "resolved"
+        | "closed"
       task_priority: "low" | "medium" | "high"
       task_status: "pending" | "in_progress" | "done" | "cancelled"
       user_status: "active" | "inactive" | "invited"
@@ -2712,6 +2882,14 @@ export const Constants = {
       quote_discount_type: ["none", "percent", "amount"],
       quote_status: ["draft", "sent", "accepted", "rejected", "expired"],
       receipt_status: ["issued", "void"],
+      support_ticket_priority: ["low", "normal", "high", "urgent"],
+      support_ticket_status: [
+        "open",
+        "in_progress",
+        "waiting_on_customer",
+        "resolved",
+        "closed",
+      ],
       task_priority: ["low", "medium", "high"],
       task_status: ["pending", "in_progress", "done", "cancelled"],
       user_status: ["active", "inactive", "invited"],

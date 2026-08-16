@@ -50,6 +50,7 @@ const DEFAULT_APP_SETTINGS: AppSettings = {
   invoice_payment_terms: null,
   receipt_number_prefix: "RCT",
   credit_note_number_prefix: "CN",
+  ticket_number_prefix: "TKT",
   email_api_key_masked: "re_xxxxxxxxxxxxxxxxxxxx",
   landing_api_key: "sb_publishable_xxxxxxxxxxxxxxxxxxxx",
   landing_last_test_at: null,

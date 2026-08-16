@@ -45,6 +45,8 @@ import { Route as AuthenticatedAppQuotesCatalogRouteImport } from './routes/_aut
 import { Route as AuthenticatedAppReceiptsIndexRouteImport } from './routes/_authenticated/app.receipts.index'
 import { Route as AuthenticatedAppReceiptsIdRouteImport } from './routes/_authenticated/app.receipts.$id'
 import { Route as AuthenticatedAppSettingsIndexRouteImport } from './routes/_authenticated/app.settings.index'
+import { Route as AuthenticatedAppSupportTicketsIndexRouteImport } from './routes/_authenticated/app.support-tickets.index'
+import { Route as AuthenticatedAppSupportTicketsIdRouteImport } from './routes/_authenticated/app.support-tickets.$id'
 import { Route as AuthenticatedAppTasksIndexRouteImport } from './routes/_authenticated/app.tasks.index'
 import { Route as AuthenticatedAppCreditNotesPrintIdRouteImport } from './routes/_authenticated/app.credit-notes.print.$id'
 import { Route as AuthenticatedAppInvoicesPrintIdRouteImport } from './routes/_authenticated/app.invoices.print.$id'
@@ -254,6 +256,18 @@ const AuthenticatedAppSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppSupportTicketsIndexRoute =
+  AuthenticatedAppSupportTicketsIndexRouteImport.update({
+    id: '/support-tickets/',
+    path: '/support-tickets/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSupportTicketsIdRoute =
+  AuthenticatedAppSupportTicketsIdRouteImport.update({
+    id: '/support-tickets/$id',
+    path: '/support-tickets/$id',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppTasksIndexRoute =
   AuthenticatedAppTasksIndexRouteImport.update({
     id: '/tasks/',
@@ -309,6 +323,7 @@ export interface FileRoutesByFullPath {
   '/app/quotes/$id': typeof AuthenticatedAppQuotesIdRoute
   '/app/quotes/catalog': typeof AuthenticatedAppQuotesCatalogRoute
   '/app/receipts/$id': typeof AuthenticatedAppReceiptsIdRoute
+  '/app/support-tickets/$id': typeof AuthenticatedAppSupportTicketsIdRoute
   '/app/activities/': typeof AuthenticatedAppActivitiesIndexRoute
   '/app/analytics/': typeof AuthenticatedAppAnalyticsIndexRoute
   '/app/companies/': typeof AuthenticatedAppCompaniesIndexRoute
@@ -321,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/app/quotes/': typeof AuthenticatedAppQuotesIndexRoute
   '/app/receipts/': typeof AuthenticatedAppReceiptsIndexRoute
   '/app/settings/': typeof AuthenticatedAppSettingsIndexRoute
+  '/app/support-tickets/': typeof AuthenticatedAppSupportTicketsIndexRoute
   '/app/tasks/': typeof AuthenticatedAppTasksIndexRoute
   '/app/credit-notes/print/$id': typeof AuthenticatedAppCreditNotesPrintIdRoute
   '/app/invoices/print/$id': typeof AuthenticatedAppInvoicesPrintIdRoute
@@ -350,6 +366,7 @@ export interface FileRoutesByTo {
   '/app/quotes/$id': typeof AuthenticatedAppQuotesIdRoute
   '/app/quotes/catalog': typeof AuthenticatedAppQuotesCatalogRoute
   '/app/receipts/$id': typeof AuthenticatedAppReceiptsIdRoute
+  '/app/support-tickets/$id': typeof AuthenticatedAppSupportTicketsIdRoute
   '/app/activities': typeof AuthenticatedAppActivitiesIndexRoute
   '/app/analytics': typeof AuthenticatedAppAnalyticsIndexRoute
   '/app/companies': typeof AuthenticatedAppCompaniesIndexRoute
@@ -362,6 +379,7 @@ export interface FileRoutesByTo {
   '/app/quotes': typeof AuthenticatedAppQuotesIndexRoute
   '/app/receipts': typeof AuthenticatedAppReceiptsIndexRoute
   '/app/settings': typeof AuthenticatedAppSettingsIndexRoute
+  '/app/support-tickets': typeof AuthenticatedAppSupportTicketsIndexRoute
   '/app/tasks': typeof AuthenticatedAppTasksIndexRoute
   '/app/credit-notes/print/$id': typeof AuthenticatedAppCreditNotesPrintIdRoute
   '/app/invoices/print/$id': typeof AuthenticatedAppInvoicesPrintIdRoute
@@ -394,6 +412,7 @@ export interface FileRoutesById {
   '/_authenticated/app/quotes/$id': typeof AuthenticatedAppQuotesIdRoute
   '/_authenticated/app/quotes/catalog': typeof AuthenticatedAppQuotesCatalogRoute
   '/_authenticated/app/receipts/$id': typeof AuthenticatedAppReceiptsIdRoute
+  '/_authenticated/app/support-tickets/$id': typeof AuthenticatedAppSupportTicketsIdRoute
   '/_authenticated/app/activities/': typeof AuthenticatedAppActivitiesIndexRoute
   '/_authenticated/app/analytics/': typeof AuthenticatedAppAnalyticsIndexRoute
   '/_authenticated/app/companies/': typeof AuthenticatedAppCompaniesIndexRoute
@@ -406,6 +425,7 @@ export interface FileRoutesById {
   '/_authenticated/app/quotes/': typeof AuthenticatedAppQuotesIndexRoute
   '/_authenticated/app/receipts/': typeof AuthenticatedAppReceiptsIndexRoute
   '/_authenticated/app/settings/': typeof AuthenticatedAppSettingsIndexRoute
+  '/_authenticated/app/support-tickets/': typeof AuthenticatedAppSupportTicketsIndexRoute
   '/_authenticated/app/tasks/': typeof AuthenticatedAppTasksIndexRoute
   '/_authenticated/app/credit-notes/print/$id': typeof AuthenticatedAppCreditNotesPrintIdRoute
   '/_authenticated/app/invoices/print/$id': typeof AuthenticatedAppInvoicesPrintIdRoute
@@ -438,6 +458,7 @@ export interface FileRouteTypes {
     | '/app/quotes/$id'
     | '/app/quotes/catalog'
     | '/app/receipts/$id'
+    | '/app/support-tickets/$id'
     | '/app/activities/'
     | '/app/analytics/'
     | '/app/companies/'
@@ -450,6 +471,7 @@ export interface FileRouteTypes {
     | '/app/quotes/'
     | '/app/receipts/'
     | '/app/settings/'
+    | '/app/support-tickets/'
     | '/app/tasks/'
     | '/app/credit-notes/print/$id'
     | '/app/invoices/print/$id'
@@ -479,6 +501,7 @@ export interface FileRouteTypes {
     | '/app/quotes/$id'
     | '/app/quotes/catalog'
     | '/app/receipts/$id'
+    | '/app/support-tickets/$id'
     | '/app/activities'
     | '/app/analytics'
     | '/app/companies'
@@ -491,6 +514,7 @@ export interface FileRouteTypes {
     | '/app/quotes'
     | '/app/receipts'
     | '/app/settings'
+    | '/app/support-tickets'
     | '/app/tasks'
     | '/app/credit-notes/print/$id'
     | '/app/invoices/print/$id'
@@ -522,6 +546,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/quotes/$id'
     | '/_authenticated/app/quotes/catalog'
     | '/_authenticated/app/receipts/$id'
+    | '/_authenticated/app/support-tickets/$id'
     | '/_authenticated/app/activities/'
     | '/_authenticated/app/analytics/'
     | '/_authenticated/app/companies/'
@@ -534,6 +559,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/quotes/'
     | '/_authenticated/app/receipts/'
     | '/_authenticated/app/settings/'
+    | '/_authenticated/app/support-tickets/'
     | '/_authenticated/app/tasks/'
     | '/_authenticated/app/credit-notes/print/$id'
     | '/_authenticated/app/invoices/print/$id'
@@ -810,6 +836,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/support-tickets/': {
+      id: '/_authenticated/app/support-tickets/'
+      path: '/support-tickets'
+      fullPath: '/app/support-tickets/'
+      preLoaderRoute: typeof AuthenticatedAppSupportTicketsIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/support-tickets/$id': {
+      id: '/_authenticated/app/support-tickets/$id'
+      path: '/support-tickets/$id'
+      fullPath: '/app/support-tickets/$id'
+      preLoaderRoute: typeof AuthenticatedAppSupportTicketsIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/tasks/': {
       id: '/_authenticated/app/tasks/'
       path: '/tasks'
@@ -860,6 +900,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppQuotesIdRoute: typeof AuthenticatedAppQuotesIdRoute
   AuthenticatedAppQuotesCatalogRoute: typeof AuthenticatedAppQuotesCatalogRoute
   AuthenticatedAppReceiptsIdRoute: typeof AuthenticatedAppReceiptsIdRoute
+  AuthenticatedAppSupportTicketsIdRoute: typeof AuthenticatedAppSupportTicketsIdRoute
   AuthenticatedAppActivitiesIndexRoute: typeof AuthenticatedAppActivitiesIndexRoute
   AuthenticatedAppAnalyticsIndexRoute: typeof AuthenticatedAppAnalyticsIndexRoute
   AuthenticatedAppCompaniesIndexRoute: typeof AuthenticatedAppCompaniesIndexRoute
@@ -872,6 +913,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppQuotesIndexRoute: typeof AuthenticatedAppQuotesIndexRoute
   AuthenticatedAppReceiptsIndexRoute: typeof AuthenticatedAppReceiptsIndexRoute
   AuthenticatedAppSettingsIndexRoute: typeof AuthenticatedAppSettingsIndexRoute
+  AuthenticatedAppSupportTicketsIndexRoute: typeof AuthenticatedAppSupportTicketsIndexRoute
   AuthenticatedAppTasksIndexRoute: typeof AuthenticatedAppTasksIndexRoute
   AuthenticatedAppCreditNotesPrintIdRoute: typeof AuthenticatedAppCreditNotesPrintIdRoute
   AuthenticatedAppInvoicesPrintIdRoute: typeof AuthenticatedAppInvoicesPrintIdRoute
@@ -891,6 +933,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppQuotesIdRoute: AuthenticatedAppQuotesIdRoute,
   AuthenticatedAppQuotesCatalogRoute: AuthenticatedAppQuotesCatalogRoute,
   AuthenticatedAppReceiptsIdRoute: AuthenticatedAppReceiptsIdRoute,
+  AuthenticatedAppSupportTicketsIdRoute: AuthenticatedAppSupportTicketsIdRoute,
   AuthenticatedAppActivitiesIndexRoute: AuthenticatedAppActivitiesIndexRoute,
   AuthenticatedAppAnalyticsIndexRoute: AuthenticatedAppAnalyticsIndexRoute,
   AuthenticatedAppCompaniesIndexRoute: AuthenticatedAppCompaniesIndexRoute,
@@ -903,6 +946,8 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppQuotesIndexRoute: AuthenticatedAppQuotesIndexRoute,
   AuthenticatedAppReceiptsIndexRoute: AuthenticatedAppReceiptsIndexRoute,
   AuthenticatedAppSettingsIndexRoute: AuthenticatedAppSettingsIndexRoute,
+  AuthenticatedAppSupportTicketsIndexRoute:
+    AuthenticatedAppSupportTicketsIndexRoute,
   AuthenticatedAppTasksIndexRoute: AuthenticatedAppTasksIndexRoute,
   AuthenticatedAppCreditNotesPrintIdRoute:
     AuthenticatedAppCreditNotesPrintIdRoute,
