@@ -1,6 +1,7 @@
 {
   "key": "support_tickets",
   "name": "Support tickets",
+  "description": "Track customer questions and support requests from first contact to resolution.",
   "scope": "named",
   "audience": ["tenant_a"],
   "has_migration": true,
