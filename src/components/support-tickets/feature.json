@@ -1,0 +1,8 @@
+{
+  "key": "support_tickets",
+  "name": "Support tickets",
+  "scope": "named",
+  "audience": ["tenant_a"],
+  "has_migration": true,
+  "version": "1.0.0"
+}
