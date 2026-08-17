@@ -559,6 +559,67 @@ export type Database = {
           },
         ]
       }
+      customer_feedback: {
+        Row: {
+          comment: string | null
+          company_id: string | null
+          contact_id: string | null
+          created_by: string | null
+          id: string
+          last_modified_by: string | null
+          origin_node_id: string | null
+          rating: number
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_by?: string | null
+          id?: string
+          last_modified_by?: string | null
+          origin_node_id?: string | null
+          rating: number
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_by?: string | null
+          id?: string
+          last_modified_by?: string | null
+          origin_node_id?: string | null
+          rating?: number
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_feedback_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_feedback_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_feedback_origin_node_id_fkey"
+            columns: ["origin_node_id"]
+            isOneToOne: false
+            referencedRelation: "sync_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_note_line_items: {
         Row: {
           catalog_item_id: string | null

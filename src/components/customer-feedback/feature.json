@@ -1,0 +1,9 @@
+{
+  "key": "customer_feedback",
+  "name": "Customer feedback",
+  "description": "Record how customers rated their experience after an issue was resolved.",
+  "scope": "named",
+  "audience": ["tenant_a"],
+  "has_migration": true,
+  "version": "1.0.0"
+}
